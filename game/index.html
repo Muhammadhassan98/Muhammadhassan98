@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>لعبة جمع الجواهر — ديمو ثري دي</title>
+  <style>
+    :root {
+      --pink: #ff5fa2;
+      --purple: #8a5cff;
+      --dark: #14101f;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--dark); }
+    body { font-family: "Segoe UI", Tahoma, sans-serif; color: #fff; }
+    #app { position: fixed; inset: 0; }
+    canvas { display: block; }
+
+    /* واجهة المعلومات (HUD) */
+    #hud {
+      position: fixed; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 22px; pointer-events: none; z-index: 10;
+      text-shadow: 0 2px 8px rgba(0,0,0,.6);
+    }
+    .pill {
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(6px);
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-size: 18px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pill b { color: var(--pink); font-size: 22px; }
+    #timer b { color: #ffd35f; }
+
+    /* شاشات البداية والنهاية */
+    .overlay {
+      position: fixed; inset: 0; z-index: 20;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; gap: 18px; padding: 24px;
+      background: radial-gradient(circle at 50% 30%, rgba(138,92,255,.25), rgba(20,16,31,.92));
+      backdrop-filter: blur(4px);
+    }
+    .overlay.hidden { display: none; }
+    .overlay h1 {
+      font-size: clamp(28px, 7vw, 56px); font-weight: 900;
+      background: linear-gradient(90deg, var(--pink), var(--purple));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .overlay p { font-size: clamp(15px, 4vw, 19px); opacity: .85; max-width: 480px; line-height: 1.7; }
+    .btn {
+      margin-top: 6px;
+      background: linear-gradient(90deg, var(--pink), var(--purple));
+      color: #fff; border: none; border-radius: 999px;
+      padding: 14px 42px; font-size: 20px; font-weight: 800;
+      cursor: pointer; box-shadow: 0 10px 30px rgba(138,92,255,.5);
+      transition: transform .15s ease;
+    }
+    .btn:hover { transform: translateY(-2px) scale(1.03); }
+    .keys { font-size: 14px; opacity: .7; }
+    kbd {
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+      border-radius: 6px; padding: 2px 9px; margin: 0 2px; font-family: monospace;
+    }
+    #finalScore b { color: var(--pink); }
+
+    /* أزرار اللمس للموبايل */
+    #touch {
+      position: fixed; inset: 0; z-index: 15; pointer-events: none;
+      display: none;
+    }
+    #touch.on { display: block; }
+    .tbtn {
+      position: absolute; width: 64px; height: 64px;
+      background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.25);
+      border-radius: 50%; pointer-events: auto;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; user-select: none; -webkit-user-select: none;
+    }
+    #t-up    { bottom: 168px; left: 86px; }
+    #t-down  { bottom: 40px;  left: 86px; }
+    #t-left  { bottom: 104px; left: 18px; }
+    #t-right { bottom: 104px; left: 154px; }
+    #t-jump  { bottom: 70px; right: 30px; width: 86px; height: 86px; font-size: 16px; font-weight: 800; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="hud">
+    <div class="pill" id="score">الجواهر <b id="scoreVal">0</b> / <span id="scoreTotal">12</span></div>
+    <div class="pill" id="timer">الوقت <b id="timerVal">60</b></div>
+  </div>
+
+  <div id="touch">
+    <div class="tbtn" id="t-up">▲</div>
+    <div class="tbtn" id="t-down">▼</div>
+    <div class="tbtn" id="t-left">◀</div>
+    <div class="tbtn" id="t-right">▶</div>
+    <div class="tbtn" id="t-jump">قفز</div>
+  </div>
+
+  <div class="overlay" id="startScreen">
+    <h1>جامِع الجواهر</h1>
+    <p>تحرّك في العالم الثلاثي الأبعاد واجمع كل الجواهر قبل انتهاء الوقت. اقفز فوق المنصّات للوصول للجواهر العالية!</p>
+    <button class="btn" id="startBtn">ابدأ اللعب</button>
+    <div class="keys">
+      التحكّم: <kbd>W A S D</kbd> أو الأسهم للحركة · <kbd>مسافة</kbd> للقفز
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="endScreen">
+    <h1 id="endTitle">أحسنت! 🎉</h1>
+    <p id="finalScore">جمعت <b>0</b> جوهرة</p>
+    <button class="btn" id="restartBtn">العب مرة أخرى</button>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // ====== إعداد المشهد ======
+    const app = document.getElementById('app');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x14101f);
+    scene.fog = new THREE.Fog(0x14101f, 30, 70);
+
+    const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 200);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    app.appendChild(renderer.domElement);
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    // ====== الإضاءة ======
+    scene.add(new THREE.HemisphereLight(0xff9fd0, 0x2a1f4a, 0.9));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(12, 22, 8);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left = -30; sun.shadow.camera.right = 30;
+    sun.shadow.camera.top = 30; sun.shadow.camera.bottom = -30;
+    scene.add(sun);
+
+    // ====== الأرضية ======
+    const GROUND = 40;
+    const ground = new THREE.Mesh(
+      new THREE.BoxGeometry(GROUND, 1, GROUND),
+      new THREE.MeshStandardMaterial({ color: 0x2a2140, roughness: 0.95 })
+    );
+    ground.position.y = -0.5;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // شبكة زخرفية فوق الأرضية
+    const grid = new THREE.GridHelper(GROUND, 40, 0x8a5cff, 0x3a2f5a);
+    grid.position.y = 0.01;
+    scene.add(grid);
+
+    // ====== المنصّات ======
+    const platforms = [];
+    function addPlatform(x, y, z, w, d) {
+      const p = new THREE.Mesh(
+        new THREE.BoxGeometry(w, 1, d),
+        new THREE.MeshStandardMaterial({ color: 0x4a3a78, roughness: 0.8 })
+      );
+      p.position.set(x, y, z);
+      p.castShadow = true; p.receiveShadow = true;
+      scene.add(p);
+      platforms.push({ mesh: p, top: y + 0.5, halfW: w / 2, halfD: d / 2, x, z });
+    }
+    addPlatform(-8, 1.5, -6, 5, 5);
+    addPlatform(9, 2.5, 7, 5, 5);
+    addPlatform(0, 4, 0, 4, 4);
+    addPlatform(11, 1.5, -9, 4, 4);
+
+    // ====== اللاعب ======
+    const player = new THREE.Group();
+    const body = new THREE.Mesh(
+      new THREE.SphereGeometry(0.7, 32, 32),
+      new THREE.MeshStandardMaterial({ color: 0xff5fa2, roughness: 0.3, metalness: 0.1, emissive: 0x551133 })
+    );
+    body.castShadow = true;
+    player.add(body);
+    // عينان بسيطتان لإضفاء طابع لطيف
+    const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    for (const sx of [-0.25, 0.25]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 16), eyeMat);
+      eye.position.set(sx, 0.18, 0.6);
+      player.add(eye);
+    }
+    player.position.set(0, 0.7, 8);
+    scene.add(player);
+
+    // ====== الجواهر ======
+    const gemGeo = new THREE.OctahedronGeometry(0.45);
+    const gemMat = new THREE.MeshStandardMaterial({
+      color: 0x5fd0ff, emissive: 0x1a6aa0, roughness: 0.1, metalness: 0.4
+    });
+    const gems = [];
+    const gemSpots = [
+      [-4, 0.9, 2], [6, 0.9, -4], [-10, 0.9, 9], [12, 0.9, 11], [3, 0.9, -10],
+      [-8, 2.6, -6], [9, 3.6, 7], [0, 5.1, 0], [11, 2.6, -9],
+      [-13, 0.9, -12], [13, 0.9, -2], [-2, 0.9, 13]
+    ];
+    function makeGem(x, y, z) {
+      const g = new THREE.Mesh(gemGeo, gemMat.clone());
+      g.position.set(x, y, z);
+      g.castShadow = true;
+      g.userData.base = y;
+      g.userData.alive = true;
+      scene.add(g);
+      // هالة ضوئية
+      const halo = new THREE.PointLight(0x5fd0ff, 1.2, 4);
+      g.add(halo);
+      gems.push(g);
+    }
+    gemSpots.forEach(s => makeGem(...s));
+
+    const TOTAL = gems.length;
+    document.getElementById('scoreTotal').textContent = TOTAL;
+
+    // ====== الحالة والتحكّم ======
+    const keys = {};
+    addEventListener('keydown', e => {
+      keys[e.code] = true;
+      if (e.code === 'Space') e.preventDefault();
+    });
+    addEventListener('keyup', e => keys[e.code] = false);
+
+    // أزرار اللمس
+    const touch = {};
+    if (matchMedia('(pointer: coarse)').matches) document.getElementById('touch').classList.add('on');
+    function bindTouch(id, name) {
+      const el = document.getElementById(id);
+      const on  = e => { e.preventDefault(); touch[name] = true; };
+      const off = e => { e.preventDefault(); touch[name] = false; };
+      el.addEventListener('touchstart', on); el.addEventListener('touchend', off);
+      el.addEventListener('mousedown', on); el.addEventListener('mouseup', off);
+    }
+    bindTouch('t-up', 'up'); bindTouch('t-down', 'down');
+    bindTouch('t-left', 'left'); bindTouch('t-right', 'right');
+    bindTouch('t-jump', 'jump');
+
+    // ====== فيزياء بسيطة ======
+    const vel = new THREE.Vector3();
+    let vy = 0, onGround = true;
+    const SPEED = 0.16, JUMP = 0.32, GRAVITY = 0.018;
+    const HALF = GROUND / 2 - 1;
+
+    let score = 0, timeLeft = 60, running = false, startTime = 0;
+    const scoreVal = document.getElementById('scoreVal');
+    const timerVal = document.getElementById('timerVal');
+
+    // أرضية أسفل اللاعب: تتحقّق من المنصّات أيضًا
+    function groundHeightAt(x, z) {
+      let h = 0.7; // نصف قطر الكرة فوق الأرضية الأساسية
+      for (const p of platforms) {
+        if (Math.abs(x - p.x) <= p.halfW && Math.abs(z - p.z) <= p.halfD) {
+          h = Math.max(h, p.top + 0.7);
+        }
+      }
+      return h;
+    }
+
+    function update(dt) {
+      if (!running) return;
+
+      // اتجاه الحركة بالنسبة لاتجاه الكاميرا (محور Z نحو/بعيد عن الشاشة)
+      let mx = 0, mz = 0;
+      if (keys['KeyW'] || keys['ArrowUp'] || touch.up)    mz -= 1;
+      if (keys['KeyS'] || keys['ArrowDown'] || touch.down) mz += 1;
+      if (keys['KeyA'] || keys['ArrowLeft'] || touch.left) mx -= 1;
+      if (keys['KeyD'] || keys['ArrowRight'] || touch.right) mx += 1;
+
+      vel.set(mx, 0, mz);
+      if (vel.lengthSq() > 0) {
+        vel.normalize().multiplyScalar(SPEED);
+        // توجيه اللاعب نحو الحركة
+        const angle = Math.atan2(vel.x, vel.z);
+        player.rotation.y = angle;
+      }
+      player.position.x += vel.x;
+      player.position.z += vel.z;
+      player.position.x = THREE.MathUtils.clamp(player.position.x, -HALF, HALF);
+      player.position.z = THREE.MathUtils.clamp(player.position.z, -HALF, HALF);
+
+      // قفز وجاذبية
+      if ((keys['Space'] || touch.jump) && onGround) {
+        vy = JUMP; onGround = false;
+      }
+      vy -= GRAVITY;
+      player.position.y += vy;
+
+      const floor = groundHeightAt(player.position.x, player.position.z);
+      if (player.position.y <= floor) {
+        player.position.y = floor; vy = 0; onGround = true;
+      }
+
+      // تدوير الجواهر وتعويمها + الاصطدام
+      const t = performance.now() * 0.003;
+      for (const g of gems) {
+        if (!g.userData.alive) continue;
+        g.rotation.y += 0.04;
+        g.position.y = g.userData.base + Math.sin(t + g.position.x) * 0.15;
+        if (player.position.distanceTo(g.position) < 1.1) {
+          g.userData.alive = false;
+          g.visible = false;
+          score++;
+          scoreVal.textContent = score;
+          if (score >= TOTAL) endGame(true);
+        }
+      }
+
+      // المؤقّت
+      timeLeft = 60 - (performance.now() - startTime) / 1000;
+      if (timeLeft <= 0) { timeLeft = 0; endGame(false); }
+      timerVal.textContent = Math.ceil(timeLeft);
+
+      // كاميرا تتبع اللاعب (منظور خلفي مرتفع)
+      const camTarget = new THREE.Vector3(
+        player.position.x, player.position.y + 6, player.position.z + 11
+      );
+      camera.position.lerp(camTarget, 0.08);
+      camera.lookAt(player.position.x, player.position.y + 0.5, player.position.z);
+    }
+
+    let last = performance.now();
+    function loop() {
+      const now = performance.now();
+      const dt = (now - last) / 1000; last = now;
+      update(dt);
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    // ====== إدارة اللعبة ======
+    const startScreen = document.getElementById('startScreen');
+    const endScreen = document.getElementById('endScreen');
+
+    function startGame() {
+      score = 0; timeLeft = 60;
+      scoreVal.textContent = 0;
+      gems.forEach(g => { g.userData.alive = true; g.visible = true; });
+      player.position.set(0, 0.7, 8);
+      vy = 0; onGround = true;
+      startScreen.classList.add('hidden');
+      endScreen.classList.add('hidden');
+      startTime = performance.now();
+      running = true;
+    }
+
+    function endGame(won) {
+      running = false;
+      document.getElementById('endTitle').textContent =
+        won ? 'رائع! جمعت كل الجواهر 🎉' : 'انتهى الوقت ⏰';
+      document.getElementById('finalScore').innerHTML =
+        `جمعت <b>${score}</b> من ${TOTAL} جوهرة`;
+      endScreen.classList.remove('hidden');
+    }
+
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('restartBtn').addEventListener('click', startGame);
+  </script>
+</body>
+</html>
