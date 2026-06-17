@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>منشئ السير الذاتية | CV Builder</title>
+<meta name="description" content="أنشئ سيرة ذاتية احترافية — معاينة حية، تصدير PDF، قوالب متعددة، عربي/إنجليزي. ملف واحد يعمل بدون إنترنت." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ===== أساسيات ===== */
+:root{
+  --bg:#f1f5f9; --panel:#fff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
+  --brand:#4f46e5; --radius:12px;
+  --shadow:0 1px 3px rgba(15,23,42,.08),0 8px 24px rgba(15,23,42,.06);
+  --font:'Cairo','Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* ===== شريط الأدوات ===== */
+.toolbar{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;z-index:5}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--brand),#7c3aed);color:#fff;font-weight:800;display:grid;place-items:center;letter-spacing:.5px}
+.title{margin:0;font-size:17px;font-weight:800}
+.tagline{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.controls{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.control{display:flex;flex-direction:column;gap:6px}
+.control-label{font-size:11px;color:var(--muted);font-weight:600}
+.seg{display:inline-flex;background:var(--bg);border-radius:9px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;font-size:13px;font-weight:600;color:var(--muted)}
+.seg button.active{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.swatches{display:inline-flex;gap:7px}
+.swatch{width:24px;height:24px;border-radius:50%;border:2px solid transparent;outline:2px solid transparent;transition:transform .1s}
+.swatch.active{border-color:#fff;outline-color:var(--ink);transform:scale(1.1)}
+.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:9px 16px;border-radius:9px;font-size:13px;font-weight:700;transition:background .12s,border-color .12s,transform .05s}
+.btn:active{transform:translateY(1px)}
+.btn-ghost:hover{background:var(--bg)}
+.btn-primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn-primary:hover{background:#4338ca}
+.btn-add{width:100%;border-style:dashed;color:var(--brand);border-color:#c7d2fe;background:#eef2ff;margin-top:4px}
+.btn-add:hover{background:#e0e7ff}
+.saved{font-size:12px;color:#16a34a;opacity:0;transition:opacity .3s}
+.saved.on{opacity:1}
+
+/* ===== مساحة العمل ===== */
+.workspace{flex:1;display:grid;grid-template-columns:minmax(360px,1fr) 1.2fr;overflow:hidden}
+.panel{overflow:auto}
+.panel-editor{border-inline-end:1px solid var(--line);background:var(--panel)}
+.panel-preview{background:#e2e8f0}
+.preview-scroll{padding:28px;display:flex;justify-content:center}
+
+/* ===== المحرّر ===== */
+.editor{padding:16px 18px 60px;max-width:720px;margin:0 auto}
+.section{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px;background:var(--panel)}
+.section-head{list-style:none;cursor:pointer;padding:14px 16px;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:space-between}
+.section-head::-webkit-details-marker{display:none}
+.section-head::after{content:'▾';color:var(--muted);transition:transform .15s}
+.section[open] .section-head::after{transform:rotate(180deg)}
+.section-body{padding:4px 16px 16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.field.full{grid-column:1/-1}
+.field-label{font-size:12px;font-weight:600;color:var(--muted)}
+.field-input{border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);transition:border-color .12s,box-shadow .12s}
+.field-input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+textarea.field-input{resize:vertical;min-height:64px;line-height:1.6}
+.check{display:inline-flex;align-items:center;gap:8px;font-size:13px;margin:4px 0 10px}
+.check input{width:16px;height:16px;accent-color:var(--brand)}
+.repeat{position:relative;border:1px solid var(--line);border-radius:11px;padding:14px;margin-bottom:12px;background:#fafafa}
+.repeat-remove{position:absolute;inset-inline-end:8px;top:8px;width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:13px;line-height:1}
+.repeat-remove:hover{background:#fee2e2;color:#dc2626;border-color:#fecaca}
+
+/* ===== صفحة A4 ===== */
+.page{width:210mm;min-height:297mm;background:#fff;box-shadow:var(--shadow);overflow:hidden}
+.cv{width:100%;min-height:297mm;color:#1f2937;font-size:11pt;line-height:1.55}
+.cv-name{margin:0;font-size:24pt;font-weight:800;color:#111827}
+.cv-role{margin:2px 0 0;font-size:13pt;color:var(--accent);font-weight:600}
+.cv-h2{font-size:11pt;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);margin:0 0 8px}
+.cv-section{margin-bottom:16px}
+.cv-summary{margin:0;color:#374151}
+.cv-item{margin-bottom:10px}
+.cv-row{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.cv-sub{color:var(--muted);font-size:10.5pt}
+.cv-date{color:var(--muted);font-size:9.5pt;white-space:nowrap}
+.cv-desc{margin:4px 0 0;color:#374151;font-size:10.5pt}
+.cv-line{display:flex;justify-content:space-between;align-items:center;padding:3px 0}
+.cv-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.cv-inline{margin:0;color:#374151}
+.cv-links{display:flex;flex-wrap:wrap;gap:6px}
+.cv-chip{background:#f1f5f9;border-radius:6px;padding:3px 9px;font-size:9.5pt}
+.dots{display:inline-flex;gap:4px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.bar{display:block;height:6px;background:rgba(0,0,0,.08);border-radius:99px;margin-top:4px;overflow:hidden}
+.bar-fill{display:block;height:100%;border-radius:99px}
+
+/* كلاسيكي */
+.cv-classic{padding:26mm 20mm}
+.cv-classic .head{display:flex;gap:18px;align-items:center;border-bottom:3px solid var(--accent);padding-bottom:16px;margin-bottom:18px}
+.cv-classic .photo{width:84px;height:84px;border-radius:50%;object-fit:cover}
+.cv-classic .contacts{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;color:var(--muted);font-size:10pt}
+
+/* عصري */
+.cv-modern{display:grid;grid-template-columns:34% 1fr;min-height:297mm}
+.cv-modern .side{background:var(--accent);color:#fff;padding:22mm 14px 14px}
+.cv-modern .main{padding:22mm 18px 14px}
+.cv-modern .photo,.cv-modern .avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:grid;place-items:center;background:rgba(255,255,255,.2);font-size:40px;font-weight:800}
+.cv-modern .cv-name{color:#fff;font-size:19pt;text-align:center}
+.cv-modern .side .cv-role{color:rgba(255,255,255,.85);text-align:center}
+.cv-modern .side-block{margin-top:18px}
+.cv-modern .h2-side{color:#fff;border-bottom:1px solid rgba(255,255,255,.3);padding-bottom:5px}
+.cv-modern .contact{font-size:9.5pt;margin-bottom:6px;word-break:break-word}
+.cv-modern .skill{margin-bottom:8px;font-size:10pt}
+.cv-modern .skill .bar{background:rgba(255,255,255,.25)}
+.cv-modern .main .cv-name{color:#111827}
+
+/* بسيط */
+.cv-minimal{padding:24mm 22mm}
+.cv-minimal .head{text-align:center;margin-bottom:16px}
+.cv-minimal .cv-name{font-size:22pt;font-weight:700}
+.cv-minimal .contacts{color:var(--muted);font-size:10pt;margin-top:8px}
+.cv-minimal .cv-summary{text-align:center;max-width:90%;margin:0 auto 18px;color:#4b5563}
+.cv-minimal .cv-h2{border-bottom:1px solid var(--line);padding-bottom:5px}
+
+/* استجابة */
+@media (max-width:920px){
+  .workspace{grid-template-columns:1fr;overflow:auto}
+  .panel{overflow:visible}
+  .preview-scroll{padding:16px}
+  .page{width:100%;min-height:auto}
+  .cv,.cv-modern{min-height:auto}
+  .cv-modern{grid-template-columns:1fr}
+}
+
+/* طباعة / PDF */
+@page{size:A4;margin:0}
+@media print{
+  body{background:#fff}
+  .toolbar,.panel-editor{display:none!important}
+  .app,.workspace,.panel-preview{display:block;height:auto;overflow:visible}
+  .preview-scroll{display:block;padding:0}
+  .page{width:210mm;min-height:297mm;box-shadow:none;margin:0}
+  .cv{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="toolbar">
+    <div class="brand">
+      <span class="logo">CV</span>
+      <div><h1 class="title" id="appName"></h1><p class="tagline" id="tagline"></p></div>
+    </div>
+    <div class="controls">
+      <div class="control"><label class="control-label" id="lblTemplate"></label><div class="seg" id="segTemplate"></div></div>
+      <div class="control"><label class="control-label" id="lblAccent"></label><div class="swatches" id="swatches"></div></div>
+      <div class="actions">
+        <span class="saved" id="saved">●</span>
+        <button class="btn btn-ghost" id="btnLang"></button>
+        <button class="btn btn-ghost" id="btnReset"></button>
+        <button class="btn btn-primary" id="btnDownload"></button>
+      </div>
+    </div>
+  </header>
+  <main class="workspace">
+    <section class="panel panel-editor"><div class="editor" id="editor"></div></section>
+    <section class="panel panel-preview"><div class="preview-scroll"><div class="page" id="page"></div></div></section>
+  </main>
+</div>
+
+<script>
+/* ================= الترجمات ================= */
+const T = {
+  ar:{dir:'rtl',appName:'منشئ السير الذاتية',tagline:'أنشئ سيرة ذاتية احترافية في دقائق',language:'English',download:'⬇ تنزيل PDF',reset:'مسح الكل',resetConfirm:'هل تريد مسح كل البيانات؟ لا يمكن التراجع.',template:'القالب',accent:'اللون',saved:'تم الحفظ تلقائياً',add:'إضافة',remove:'حذف',you:'اسمك هنا',yourTitle:'مسماك الوظيفي',
+    sections:{personal:'البيانات الشخصية',summary:'النبذة',experience:'الخبرات العملية',education:'التعليم',skills:'المهارات',languages:'اللغات',links:'روابط'},
+    fields:{fullName:'الاسم الكامل',jobTitle:'المسمى الوظيفي',email:'البريد الإلكتروني',phone:'رقم الهاتف',location:'المدينة / البلد',website:'الموقع الإلكتروني',photo:'رابط الصورة (اختياري)',summaryText:'اكتب نبذة مختصرة عنك...',role:'المسمى',company:'الشركة',start:'من',end:'إلى',current:'حتى الآن',description:'الوصف',degree:'الدرجة / التخصص',school:'الجامعة / المعهد',skillName:'المهارة',level:'المستوى',languageName:'اللغة',label:'العنوان',url:'الرابط'},
+    levels:['مبتدئ','متوسط','متقدم','خبير'],
+    ph:{fullName:'محمد حسن',jobTitle:'مطور واجهات أمامية',email:'name@email.com',phone:'+20 100 000 0000',location:'القاهرة، مصر',website:'example.com'},
+    tpl:{classic:'كلاسيكي',modern:'عصري',minimal:'بسيط'}},
+  en:{dir:'ltr',appName:'CV Builder',tagline:'Create a professional resume in minutes',language:'العربية',download:'⬇ Download PDF',reset:'Clear all',resetConfirm:'Clear all data? This cannot be undone.',template:'Template',accent:'Color',saved:'Saved automatically',add:'Add',remove:'Remove',you:'Your name',yourTitle:'Your job title',
+    sections:{personal:'Personal details',summary:'Summary',experience:'Work experience',education:'Education',skills:'Skills',languages:'Languages',links:'Links'},
+    fields:{fullName:'Full name',jobTitle:'Job title',email:'Email',phone:'Phone',location:'City / Country',website:'Website',photo:'Photo URL (optional)',summaryText:'Write a short summary about yourself...',role:'Role',company:'Company',start:'From',end:'To',current:'Present',description:'Description',degree:'Degree / Major',school:'University / Institute',skillName:'Skill',level:'Level',languageName:'Language',label:'Label',url:'URL'},
+    levels:['Beginner','Intermediate','Advanced','Expert'],
+    ph:{fullName:'John Doe',jobTitle:'Frontend Developer',email:'name@email.com',phone:'+1 555 000 0000',location:'New York, USA',website:'example.com'},
+    tpl:{classic:'Classic',modern:'Modern',minimal:'Minimal'}}
+};
+const ACCENTS=['#4f46e5','#0ea5e9','#059669','#db2777','#ea580c','#0f172a'];
+
+/* ================= البيانات ================= */
+const SAMPLE={personal:{fullName:'محمد حسن',jobTitle:'مطوّر واجهات أمامية',email:'mohamed@email.com',phone:'+20 100 123 4567',location:'القاهرة، مصر',website:'mohamed.dev',photo:''},
+  summary:'مطوّر واجهات أمامية بخبرة 4 سنوات في بناء تطبيقات ويب سريعة وسهلة الاستخدام باستخدام React وحلول حديثة. شغوف بتجربة المستخدم وجودة الكود.',
+  experience:[{id:'e1',role:'مطوّر واجهات أول',company:'شركة التقنية',start:'2022',end:'',current:true,description:'قيادة تطوير لوحة تحكم بـ React وتحسين الأداء بنسبة 40%.'},{id:'e2',role:'مطوّر واجهات',company:'استوديو ويب',start:'2020',end:'2022',current:false,description:'بناء مواقع متجاوبة لعملاء متعددين بمعايير وصول عالية.'}],
+  education:[{id:'d1',degree:'بكالوريوس علوم حاسب',school:'جامعة القاهرة',start:'2016',end:'2020',current:false,description:''}],
+  skills:[{id:'s1',name:'React',level:3},{id:'s2',name:'JavaScript',level:3},{id:'s3',name:'CSS / Tailwind',level:2},{id:'s4',name:'Git',level:2}],
+  languages:[{id:'l1',name:'العربية',level:3},{id:'l2',name:'الإنجليزية',level:2}],
+  links:[{id:'k1',label:'GitHub',url:'github.com/username'},{id:'k2',label:'LinkedIn',url:'linkedin.com/in/username'}]};
+const EMPTY={personal:{fullName:'',jobTitle:'',email:'',phone:'',location:'',website:'',photo:''},summary:'',experience:[],education:[],skills:[],languages:[],links:[]};
+
+const KEY='cv-builder:standalone:v1';
+const uid=p=>p+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let state=load();
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r){const p=JSON.parse(r);return{data:Object.assign({},EMPTY,p.data),lang:p.lang||'ar',template:p.template||'classic',accent:p.accent||ACCENTS[0]};}}catch(e){}
+  return{data:structuredClone(SAMPLE),lang:'ar',template:'classic',accent:ACCENTS[0]};
+}
+let saveTimer;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    localStorage.setItem(KEY,JSON.stringify(state));
+    const el=document.getElementById('saved');el.classList.add('on');setTimeout(()=>el.classList.remove('on'),1400);
+  },400);
+}
+
+/* ================= أدوات القوالب ================= */
+const t=()=>T[state.lang];
+function dateRange(it){const end=it.current?t().fields.current:it.end;if(!it.start&&!end)return'';return[it.start,end].filter(Boolean).join(' — ');}
+function dots(level,accent){let h='<span class="dots">';for(let i=0;i<4;i++){const on=i<=level;h+=`<span class="dot" style="background:${on?accent:'#cbd5e1'};opacity:${on?1:.25}"></span>`;}return h+'</span>';}
+function bar(level,accent){return`<span class="bar"><span class="bar-fill" style="width:${(level+1)/4*100}%;background:${accent}"></span></span>`;}
+const has=a=>Array.isArray(a)&&a.length>0;
+
+/* ================= القوالب ================= */
+function tplClassic(d,L,a){const p=d.personal;return `
+<div class="cv cv-classic" style="--accent:${a}">
+  <div class="head">
+    ${p.photo?`<img class="photo" src="${esc(p.photo)}" alt="">`:''}
+    <div>
+      <h1 class="cv-name">${esc(p.fullName)||L.you}</h1>
+      <p class="cv-role">${esc(p.jobTitle)||L.yourTitle}</p>
+      <div class="contacts">
+        ${p.email?`<span>✉ ${esc(p.email)}</span>`:''}${p.phone?`<span>☎ ${esc(p.phone)}</span>`:''}
+        ${p.location?`<span>⚲ ${esc(p.location)}</span>`:''}${p.website?`<span>🔗 ${esc(p.website)}</span>`:''}
+      </div>
+    </div>
+  </div>
+  ${d.summary?`<div class="cv-section"><h2 class="cv-h2">${L.sections.summary}</h2><p class="cv-summary">${esc(d.summary)}</p></div>`:''}
+  ${has(d.experience)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.experience}</h2>${d.experience.map(e=>`
+    <div class="cv-item"><div class="cv-row"><strong>${esc(e.role)}</strong><span class="cv-date">${dateRange(e)}</span></div>
+    <div class="cv-sub">${esc(e.company)}</div>${e.description?`<p class="cv-desc">${esc(e.description)}</p>`:''}</div>`).join('')}</div>`:''}
+  ${has(d.education)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.education}</h2>${d.education.map(e=>`
+    <div class="cv-item"><div class="cv-row"><strong>${esc(e.degree)}</strong><span class="cv-date">${dateRange(e)}</span></div>
+    <div class="cv-sub">${esc(e.school)}</div>${e.description?`<p class="cv-desc">${esc(e.description)}</p>`:''}</div>`).join('')}</div>`:''}
+  <div class="cv-cols">
+    ${has(d.skills)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.skills}</h2>${d.skills.map(s=>`<div class="cv-line"><span>${esc(s.name)}</span>${dots(s.level,a)}</div>`).join('')}</div>`:''}
+    ${has(d.languages)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.languages}</h2>${d.languages.map(s=>`<div class="cv-line"><span>${esc(s.name)}</span>${dots(s.level,a)}</div>`).join('')}</div>`:''}
+  </div>
+  ${has(d.links)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.links}</h2><div class="cv-links">${d.links.map(l=>`<span class="cv-chip">${esc(l.label)}: ${esc(l.url)}</span>`).join('')}</div></div>`:''}
+</div>`;}
+
+function tplModern(d,L,a){const p=d.personal;return `
+<div class="cv cv-modern" style="--accent:${a}">
+  <aside class="side">
+    ${p.photo?`<img class="photo" src="${esc(p.photo)}" alt="">`:`<div class="avatar">${esc((p.fullName||'?').charAt(0))}</div>`}
+    <h1 class="cv-name">${esc(p.fullName)||L.you}</h1>
+    <p class="cv-role">${esc(p.jobTitle)||L.yourTitle}</p>
+    <div class="side-block">
+      ${p.email?`<div class="contact">✉ ${esc(p.email)}</div>`:''}${p.phone?`<div class="contact">☎ ${esc(p.phone)}</div>`:''}
+      ${p.location?`<div class="contact">⚲ ${esc(p.location)}</div>`:''}${p.website?`<div class="contact">🔗 ${esc(p.website)}</div>`:''}
+    </div>
+    ${has(d.skills)?`<div class="side-block"><h2 class="cv-h2 h2-side">${L.sections.skills}</h2>${d.skills.map(s=>`<div class="skill"><span>${esc(s.name)}</span>${bar(s.level,a)}</div>`).join('')}</div>`:''}
+    ${has(d.languages)?`<div class="side-block"><h2 class="cv-h2 h2-side">${L.sections.languages}</h2>${d.languages.map(s=>`<div class="skill"><span>${esc(s.name)}</span>${bar(s.level,a)}</div>`).join('')}</div>`:''}
+    ${has(d.links)?`<div class="side-block"><h2 class="cv-h2 h2-side">${L.sections.links}</h2>${d.links.map(l=>`<div class="contact">${esc(l.label)}: ${esc(l.url)}</div>`).join('')}</div>`:''}
+  </aside>
+  <main class="main">
+    ${d.summary?`<div class="cv-section"><h2 class="cv-h2">${L.sections.summary}</h2><p class="cv-summary">${esc(d.summary)}</p></div>`:''}
+    ${has(d.experience)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.experience}</h2>${d.experience.map(e=>`
+      <div class="cv-item"><div class="cv-row"><strong>${esc(e.role)}</strong><span class="cv-date">${dateRange(e)}</span></div>
+      <div class="cv-sub">${esc(e.company)}</div>${e.description?`<p class="cv-desc">${esc(e.description)}</p>`:''}</div>`).join('')}</div>`:''}
+    ${has(d.education)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.education}</h2>${d.education.map(e=>`
+      <div class="cv-item"><div class="cv-row"><strong>${esc(e.degree)}</strong><span class="cv-date">${dateRange(e)}</span></div>
+      <div class="cv-sub">${esc(e.school)}</div>${e.description?`<p class="cv-desc">${esc(e.description)}</p>`:''}</div>`).join('')}</div>`:''}
+  </main>
+</div>`;}
+
+function tplMinimal(d,L,a){const p=d.personal;const lv=i=>L.levels[i];return `
+<div class="cv cv-minimal" style="--accent:${a}">
+  <div class="head">
+    <h1 class="cv-name">${esc(p.fullName)||L.you}</h1>
+    <p class="cv-role">${esc(p.jobTitle)||L.yourTitle}</p>
+    <div class="contacts">${[p.email,p.phone,p.location,p.website].filter(Boolean).map(esc).join('  ·  ')}</div>
+  </div>
+  ${d.summary?`<p class="cv-summary">${esc(d.summary)}</p>`:''}
+  ${has(d.experience)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.experience}</h2>${d.experience.map(e=>`
+    <div class="cv-item"><div class="cv-row"><span><strong>${esc(e.role)}</strong>${e.company?' — '+esc(e.company):''}</span><span class="cv-date">${dateRange(e)}</span></div>
+    ${e.description?`<p class="cv-desc">${esc(e.description)}</p>`:''}</div>`).join('')}</div>`:''}
+  ${has(d.education)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.education}</h2>${d.education.map(e=>`
+    <div class="cv-item"><div class="cv-row"><span><strong>${esc(e.degree)}</strong>${e.school?' — '+esc(e.school):''}</span><span class="cv-date">${dateRange(e)}</span></div>
+    ${e.description?`<p class="cv-desc">${esc(e.description)}</p>`:''}</div>`).join('')}</div>`:''}
+  <div class="cv-cols">
+    ${has(d.skills)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.skills}</h2><p class="cv-inline">${d.skills.map(s=>esc(s.name)).join('  ·  ')}</p></div>`:''}
+    ${has(d.languages)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.languages}</h2><p class="cv-inline">${d.languages.map(s=>esc(s.name)+' ('+lv(s.level)+')').join('  ·  ')}</p></div>`:''}
+  </div>
+  ${has(d.links)?`<div class="cv-section"><h2 class="cv-h2">${L.sections.links}</h2><p class="cv-inline">${d.links.map(l=>esc(l.label)+': '+esc(l.url)).join('  ·  ')}</p></div>`:''}
+</div>`;}
+
+const TEMPLATES={classic:tplClassic,modern:tplModern,minimal:tplMinimal};
+
+/* ================= عرض المعاينة ================= */
+function renderPreview(){
+  const L=t();
+  const page=document.getElementById('page');
+  page.setAttribute('dir',L.dir);
+  page.innerHTML=(TEMPLATES[state.template]||tplClassic)(state.data,L,state.accent);
+}
+
+/* ================= بناء المحرّر ================= */
+function field(label,value,oninput,opts={}){
+  const id='f_'+Math.random().toString(36).slice(2,8);
+  const tag=opts.area?`<textarea class="field-input" id="${id}" rows="${opts.rows||3}" placeholder="${esc(opts.ph||'')}">${esc(value)}</textarea>`
+    :`<input class="field-input" id="${id}" type="${opts.type||'text'}" value="${esc(value)}" placeholder="${esc(opts.ph||'')}">`;
+  setTimeout(()=>{const el=document.getElementById(id);if(el)el.addEventListener('input',e=>oninput(e.target.value));},0);
+  return `<label class="field${opts.full?' full':''}"><span class="field-label">${label}</span>${tag}</label>`;
+}
+function levelSelect(label,value,oninput){
+  const L=t();const id='s_'+Math.random().toString(36).slice(2,8);
+  const opts=L.levels.map((o,i)=>`<option value="${i}" ${i===value?'selected':''}>${o}</option>`).join('');
+  setTimeout(()=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>oninput(Number(e.target.value)));},0);
+  return `<label class="field"><span class="field-label">${label}</span><select class="field-input" id="${id}">${opts}</select></label>`;
+}
+function checkbox(label,checked,oninput){
+  const id='c_'+Math.random().toString(36).slice(2,8);
+  setTimeout(()=>{const el=document.getElementById(id);if(el)el.addEventListener('change',e=>oninput(e.target.checked));},0);
+  return `<label class="check"><input type="checkbox" id="${id}" ${checked?'checked':''}><span>${label}</span></label>`;
+}
+
+function setP(k,v){state.data.personal[k]=v;renderPreview();save();}
+function upd(list,id,patch){const it=state.data[list].find(x=>x.id===id);if(it)Object.assign(it,patch);renderPreview();save();}
+function rm(list,id){state.data[list]=state.data[list].filter(x=>x.id!==id);renderEditor();renderPreview();save();}
+function add(list,item){state.data[list].push(item);renderEditor();renderPreview();save();}
+
+function section(title,inner){return `<details class="section" open><summary class="section-head">${title}</summary><div class="section-body">${inner}</div></details>`;}
+
+function renderEditor(){
+  const L=t();const F=L.fields;const PH=L.ph;const d=state.data;
+  const ed=document.getElementById('editor');
+  let h='';
+
+  // شخصي
+  h+=section(L.sections.personal,`<div class="grid2">
+    ${field(F.fullName,d.personal.fullName,v=>setP('fullName',v),{ph:PH.fullName})}
+    ${field(F.jobTitle,d.personal.jobTitle,v=>setP('jobTitle',v),{ph:PH.jobTitle})}
+    ${field(F.email,d.personal.email,v=>setP('email',v),{type:'email',ph:PH.email})}
+    ${field(F.phone,d.personal.phone,v=>setP('phone',v),{ph:PH.phone})}
+    ${field(F.location,d.personal.location,v=>setP('location',v),{ph:PH.location})}
+    ${field(F.website,d.personal.website,v=>setP('website',v),{ph:PH.website})}
+    ${field(F.photo,d.personal.photo,v=>setP('photo',v),{ph:'https://...'})}
+  </div>`);
+
+  // نبذة
+  h+=section(L.sections.summary,field(L.sections.summary,d.summary,v=>{d.summary=v;renderPreview();save();},{area:true,rows:5,full:true,ph:F.summaryText}));
+
+  // خبرات
+  h+=section(L.sections.experience,
+    d.experience.map(e=>`<div class="repeat"><button class="repeat-remove" data-rm="experience" data-id="${e.id}" title="${L.remove}">✕</button>
+      <div class="grid2">${field(F.role,e.role,v=>upd('experience',e.id,{role:v}))}${field(F.company,e.company,v=>upd('experience',e.id,{company:v}))}
+      ${field(F.start,e.start,v=>upd('experience',e.id,{start:v}))}${field(F.end,e.end,v=>upd('experience',e.id,{end:v}))}</div>
+      ${checkbox(F.current,e.current,v=>upd('experience',e.id,{current:v}))}
+      ${field(F.description,e.description,v=>upd('experience',e.id,{description:v}),{area:true,full:true})}</div>`).join('')
+    +`<button class="btn btn-add" data-add="experience">+ ${L.add}</button>`);
+
+  // تعليم
+  h+=section(L.sections.education,
+    d.education.map(e=>`<div class="repeat"><button class="repeat-remove" data-rm="education" data-id="${e.id}" title="${L.remove}">✕</button>
+      <div class="grid2">${field(F.degree,e.degree,v=>upd('education',e.id,{degree:v}))}${field(F.school,e.school,v=>upd('education',e.id,{school:v}))}
+      ${field(F.start,e.start,v=>upd('education',e.id,{start:v}))}${field(F.end,e.end,v=>upd('education',e.id,{end:v}))}</div>
+      ${field(F.description,e.description,v=>upd('education',e.id,{description:v}),{area:true,full:true,rows:2})}</div>`).join('')
+    +`<button class="btn btn-add" data-add="education">+ ${L.add}</button>`);
+
+  // مهارات
+  h+=section(L.sections.skills,
+    d.skills.map(s=>`<div class="repeat"><button class="repeat-remove" data-rm="skills" data-id="${s.id}" title="${L.remove}">✕</button>
+      <div class="grid2">${field(F.skillName,s.name,v=>upd('skills',s.id,{name:v}))}${levelSelect(F.level,s.level,v=>upd('skills',s.id,{level:v}))}</div></div>`).join('')
+    +`<button class="btn btn-add" data-add="skills">+ ${L.add}</button>`);
+
+  // لغات
+  h+=section(L.sections.languages,
+    d.languages.map(s=>`<div class="repeat"><button class="repeat-remove" data-rm="languages" data-id="${s.id}" title="${L.remove}">✕</button>
+      <div class="grid2">${field(F.languageName,s.name,v=>upd('languages',s.id,{name:v}))}${levelSelect(F.level,s.level,v=>upd('languages',s.id,{level:v}))}</div></div>`).join('')
+    +`<button class="btn btn-add" data-add="languages">+ ${L.add}</button>`);
+
+  // روابط
+  h+=section(L.sections.links,
+    d.links.map(l=>`<div class="repeat"><button class="repeat-remove" data-rm="links" data-id="${l.id}" title="${L.remove}">✕</button>
+      <div class="grid2">${field(F.label,l.label,v=>upd('links',l.id,{label:v}))}${field(F.url,l.url,v=>upd('links',l.id,{url:v}))}</div></div>`).join('')
+    +`<button class="btn btn-add" data-add="links">+ ${L.add}</button>`);
+
+  ed.innerHTML=h;
+
+  // أزرار الإضافة والحذف
+  ed.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.add;
+    const blanks={experience:{id:uid('e'),role:'',company:'',start:'',end:'',current:false,description:''},
+      education:{id:uid('d'),degree:'',school:'',start:'',end:'',current:false,description:''},
+      skills:{id:uid('s'),name:'',level:2},languages:{id:uid('l'),name:'',level:2},links:{id:uid('k'),label:'',url:''}};
+    add(k,blanks[k]);
+  });
+  ed.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>rm(b.dataset.rm,b.dataset.id));
+}
+
+/* ================= الشريط العلوي ================= */
+function renderChrome(){
+  const L=t();
+  document.documentElement.lang=state.lang;
+  document.documentElement.dir=L.dir;
+  document.getElementById('appName').textContent=L.appName;
+  document.getElementById('tagline').textContent=L.tagline;
+  document.getElementById('lblTemplate').textContent=L.template;
+  document.getElementById('lblAccent').textContent=L.accent;
+  document.getElementById('btnLang').textContent=L.language;
+  document.getElementById('btnReset').textContent=L.reset;
+  document.getElementById('btnDownload').textContent=L.download;
+  document.getElementById('saved').textContent='● '+L.saved;
+
+  const seg=document.getElementById('segTemplate');
+  seg.innerHTML=['classic','modern','minimal'].map(id=>`<button data-tpl="${id}" class="${state.template===id?'active':''}">${L.tpl[id]}</button>`).join('');
+  seg.querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{state.template=b.dataset.tpl;renderChrome();renderPreview();save();});
+
+  const sw=document.getElementById('swatches');
+  sw.innerHTML=ACCENTS.map(c=>`<button class="swatch ${state.accent===c?'active':''}" style="background:${c}" data-c="${c}" aria-label="${c}"></button>`).join('');
+  sw.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{state.accent=b.dataset.c;renderChrome();renderPreview();save();});
+}
+
+/* ================= الأحداث العامة ================= */
+document.getElementById('btnLang').onclick=()=>{state.lang=state.lang==='ar'?'en':'ar';renderAll();save();};
+document.getElementById('btnReset').onclick=()=>{if(confirm(t().resetConfirm)){state.data=structuredClone(EMPTY);renderEditor();renderPreview();save();}};
+document.getElementById('btnDownload').onclick=()=>window.print();
+
+function renderAll(){renderChrome();renderEditor();renderPreview();}
+renderAll();
+</script>
+</body>
+</html>
